@@ -1,9 +1,0 @@
-version: "3.3"
-services:
-  test:
-    build: ./
-    environment:
-      username: ${username}
-      password: ${password}
-      token: ${access_token}
-    command: ./execute.sh --regression

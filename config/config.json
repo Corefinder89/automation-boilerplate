@@ -1,0 +1,41 @@
+{
+  "root": {
+    "automation-testing":{
+      "modules":{
+        "app":{
+          "directories":[
+            "configurations",
+            "data"
+          ],
+          "sub-modules":[
+            "pageobject",
+            "pages",
+            "test",
+            "utility"
+          ],
+          "files":[
+            "conftest.py",
+            "pytest.ini",
+            "requirements.txt"
+          ]
+        }
+      },
+      "directories":[
+        "documentation",
+        "drivers",
+        "scripts"
+      ],
+      "files":[
+        ".dockerignore",
+        ".gitignore",
+        ".markdownlintrc",
+        ".pre-commit-config.yaml",
+        ".style.yapf",
+        "Dockerfile",
+        "docker-compose.yml",
+        "execute.sh",
+        "readme.md"
+      ]
+    }
+  }
+}
