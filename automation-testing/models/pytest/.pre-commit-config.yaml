@@ -1,0 +1,43 @@
+repos:
+-   repo: https://github.com/pre-commit/mirrors-yapf
+    rev: v0.32.0
+    hooks:
+    -   id: yapf
+        name: PEP 8 conventions in python
+-   repo: https://github.com/asottile/reorder_python_imports
+    rev: v2.7.1
+    hooks:
+    -   id: reorder-python-imports
+        name: Re-ordering of python imports
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: check-merge-conflict
+    -   id: requirements-txt-fixer
+    -   id: end-of-file-fixer
+    -   id: check-json
+        name: Linters for the json files in automation
+    -   id: check-yaml
+        name: Linters for yaml files in automation
+    -   id: check-case-conflict
+-   repo: https://github.com/lovesegfault/beautysh
+    rev: v6.2.1
+    hooks:
+    -   id: beautysh
+        name: Linters for bash scripts used in automation
+-   repo: https://github.com/PyCQA/bandit
+    rev: 1.7.2
+    hooks:
+    -   id: bandit
+        name: Checking for security impacts
+-   repo: https://github.com/IamTheFij/docker-pre-commit
+    rev: v2.0.1
+    hooks:
+    -   id: docker-compose-check
+        name: Linters for docker compose scripts used in automation
+-   repo: https://github.com/pryorda/dockerfilelint-precommit-hooks
+    rev: v0.1.0
+    hooks:
+    -   id: dockerfilelint
+        name: Linters for docker files used in automation
