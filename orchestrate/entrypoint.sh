@@ -18,6 +18,33 @@ check_jq_installation() {
     fi
 }
 
+# Function to safely expand path (replaces ~ with $HOME and expands environment variables)
+expand_path() {
+    local path="$1"
+    
+    # Expand ~ to $HOME (handle both ~ and ~/path)
+    case "$path" in
+        ~)
+            path="$HOME"
+            ;;
+        ~/*)
+            path="${HOME}${path#~}"
+            ;;
+        ~*)
+            # Handle ~username (though we'll just expand to $HOME for security)
+            path="${HOME}${path#~}"
+            ;;
+    esac
+    
+    # Expand common environment variables safely
+    # Only expand variables that are known to be safe
+    path="${path//\$HOME/$HOME}"
+    path="${path//\$USER/$USER}"
+    path="${path//\$PWD/$(pwd)}"
+    
+    echo "$path"
+}
+
 # Function to get destination directory from user
 get_destination_directory() {
     read -r destination_path
@@ -27,8 +54,8 @@ get_destination_directory() {
         destination_path="$(pwd)"
     fi
     
-    # Expand ~ and variables
-    destination_path=$(eval echo "$destination_path")
+    # Expand ~ and variables safely
+    destination_path=$(expand_path "$destination_path")
     
     # Resolve to absolute path if the directory exists, otherwise resolve parent
     if [ -d "$destination_path" ]; then
@@ -45,8 +72,8 @@ get_destination_directory() {
             # If parent is ".", use current directory
             destination_path="$(pwd)/$dir_name"
         else
-            # Expand parent directory path
-            parent_dir=$(eval echo "$parent_dir")
+            # Expand parent directory path safely
+            parent_dir=$(expand_path "$parent_dir")
             if [ -d "$parent_dir" ]; then
                 parent_dir=$(cd "$parent_dir" && pwd)
                 destination_path="$parent_dir/$dir_name"

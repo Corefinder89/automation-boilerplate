@@ -1,5 +1,32 @@
 #!/bin/bash
 
+# Function to safely expand path (replaces ~ with $HOME and expands environment variables)
+expand_path() {
+    local path="$1"
+    
+    # Expand ~ to $HOME (handle both ~ and ~/path)
+    case "$path" in
+        ~)
+            path="$HOME"
+            ;;
+        ~/*)
+            path="${HOME}${path#~}"
+            ;;
+        ~*)
+            # Handle ~username (though we'll just expand to $HOME for security)
+            path="${HOME}${path#~}"
+            ;;
+    esac
+    
+    # Expand common environment variables safely
+    # Only expand variables that are known to be safe
+    path="${path//\$HOME/$HOME}"
+    path="${path//\$USER/$USER}"
+    path="${path//\$PWD/$(pwd)}"
+    
+    echo "$path"
+}
+
 # Create boilerplate function for pytest
 
 pytest_boilerplate() {
@@ -22,8 +49,8 @@ pytest_boilerplate() {
     # Store original directory
     local original_dir="$(pwd)"
     
-    # Expand ~ and variables in the path
-    destination_path=$(eval echo "$destination_path")
+    # Expand ~ and variables in the path safely
+    destination_path=$(expand_path "$destination_path")
     
     # Resolve absolute path - handle both existing and non-existing directories
     if [ -d "$destination_path" ]; then
@@ -42,8 +69,8 @@ pytest_boilerplate() {
             # Relative path without parent, use current directory
             destination_path="$(pwd)/$dir_name"
         else
-            # Parent doesn't exist, try to expand and resolve
-            parent_dir=$(eval echo "$parent_dir")
+            # Parent doesn't exist, try to expand and resolve safely
+            parent_dir=$(expand_path "$parent_dir")
             if [ -d "$parent_dir" ]; then
                 parent_dir=$(cd "$parent_dir" && pwd)
                 destination_path="$parent_dir/$dir_name"

@@ -1,1 +1,1 @@
-# Create boilerplae function for playwright
+# Create boilerplate function for playwright
