@@ -19,17 +19,49 @@ pytest_boilerplate() {
         return 1
     fi
     
-    # Ensure destination directory exists (should already be resolved by caller)
+    # Store original directory
+    local original_dir="$(pwd)"
+    
+    # Expand ~ and variables in the path
+    destination_path=$(eval echo "$destination_path")
+    
+    # Resolve absolute path - handle both existing and non-existing directories
+    if [ -d "$destination_path" ]; then
+        # Directory exists, resolve to absolute path
+        destination_path=$(cd "$destination_path" && pwd)
+    else
+        # Directory doesn't exist, resolve parent and construct full path
+        local parent_dir=$(dirname "$destination_path")
+        local dir_name=$(basename "$destination_path")
+        
+        if [ -d "$parent_dir" ]; then
+            # Parent exists, resolve it and construct full path
+            parent_dir=$(cd "$parent_dir" && pwd)
+            destination_path="$parent_dir/$dir_name"
+        elif [ "$parent_dir" = "." ] || [ "$parent_dir" = "$destination_path" ]; then
+            # Relative path without parent, use current directory
+            destination_path="$(pwd)/$dir_name"
+        else
+            # Parent doesn't exist, try to expand and resolve
+            parent_dir=$(eval echo "$parent_dir")
+            if [ -d "$parent_dir" ]; then
+                parent_dir=$(cd "$parent_dir" && pwd)
+                destination_path="$parent_dir/$dir_name"
+            else
+                echo "Error: Parent directory does not exist: $parent_dir"
+                return 1
+            fi
+        fi
+    fi
+    
+    # Create destination directory if it doesn't exist
     if [ ! -d "$destination_path" ]; then
-        echo "Warning: Destination directory does not exist, attempting to create: $destination_path"
+        echo "Creating destination directory: $destination_path"
         mkdir -p "$destination_path" || {
             echo "Error: Failed to create destination directory: $destination_path"
             return 1
         }
     fi
-    
-    # Store original directory
-    local original_dir="$(pwd)"
     
     # Change to destination directory
     cd "$destination_path" || {
@@ -40,8 +72,29 @@ pytest_boilerplate() {
     echo "Destination directory: $destination_path"
     echo ""
     
+    # Check if jq is installed
+    if ! command -v jq &> /dev/null; then
+        echo "Error: jq is not installed. Please install jq first."
+        echo "On Ubuntu/Debian: sudo apt-get install jq"
+        return 1
+    fi
+    
+    # Check if config file exists
+    if [ ! -f "$config_file" ]; then
+        echo "Error: Config file not found at $config_file"
+        return 1
+    fi
+    
     # Store entire JSON as an object
-    json_obj=$(jq '.' "$config_file")
+    json_obj=$(jq '.' "$config_file" 2>&1)
+    local jq_exit_code=$?
+    
+    # Check if jq command succeeded
+    if [ $jq_exit_code -ne 0 ] || [ -z "$json_obj" ]; then
+        echo "Error: Failed to read config file: $config_file"
+        echo "jq error: $json_obj"
+        return 1
+    fi
     
     # Get the root directory name from config.json
     # Extracts the first key from the "root" object in config.json
@@ -51,16 +104,23 @@ pytest_boilerplate() {
     if [ -z "$root_dir" ] || [ "$root_dir" = "null" ]; then
         echo "Error: Could not read root directory name from config.json"
         echo "Config file: $config_file"
+        echo "JSON content: $json_obj"
         return 1
     fi
     
     echo "Creating project structure from $config_file..."
-    echo "Root directory name from config.json: $root_dir"
     echo ""
     
     # Create the root directory (from config.json) inside the destination
-    mkdir -p "$root_dir"
-    cd "$root_dir" || return 1
+    mkdir -p "$root_dir" || {
+        echo "Error: Failed to create root directory: $root_dir"
+        return 1
+    }
+    
+    cd "$root_dir" || {
+        echo "Error: Failed to change into root directory: $root_dir"
+        return 1
+    }
     
     # Create root-level directories
     echo "Creating root-level directories..."

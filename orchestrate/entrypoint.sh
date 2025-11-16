@@ -45,13 +45,14 @@ get_destination_directory() {
     
     # Create destination directory if it doesn't exist
     if [ ! -d "$destination_path" ]; then
-        echo "Creating destination directory: $destination_path"
+        echo "Creating destination directory: $destination_path" >&2
         mkdir -p "$destination_path" || {
-            echo "Error: Failed to create destination directory: $destination_path"
+            echo "Error: Failed to create destination directory: $destination_path" >&2
             return 1
         }
     fi
     
+    # Output only the path to stdout (for command substitution)
     echo "$destination_path"
 }
 
@@ -135,6 +136,12 @@ main() {
            # Call the function to create the boilerplate for pytest
            if type pytest_boilerplate &>/dev/null; then
                pytest_boilerplate "$destination_path"
+               local exit_code=$?
+               if [ $exit_code -ne 0 ]; then
+                   echo ""
+                   echo "Error: Failed to create boilerplate structure (exit code: $exit_code)"
+                   return $exit_code
+               fi
            else
                echo "Error: pytest_boilerplate function not found"
                return 1
@@ -144,6 +151,12 @@ main() {
            # Call the function to create the boilerplate for playwright
            if type create_playwright_boilerplate &>/dev/null; then
                create_playwright_boilerplate "$destination_path"
+               local exit_code=$?
+               if [ $exit_code -ne 0 ]; then
+                   echo ""
+                   echo "Error: Failed to create boilerplate structure (exit code: $exit_code)"
+                   return $exit_code
+               fi
            else
                echo "Error: create_playwright_boilerplate function not found"
                return 1
