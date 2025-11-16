@@ -72,13 +72,6 @@ pytest_boilerplate() {
     echo "Destination directory: $destination_path"
     echo ""
     
-    # Check if jq is installed
-    if ! command -v jq &> /dev/null; then
-        echo "Error: jq is not installed. Please install jq first."
-        echo "On Ubuntu/Debian: sudo apt-get install jq"
-        return 1
-    fi
-    
     # Check if config file exists
     if [ ! -f "$config_file" ]; then
         echo "Error: Config file not found at $config_file"

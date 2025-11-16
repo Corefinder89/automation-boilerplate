@@ -4,6 +4,20 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/pytest_boilerplate.sh"
 
+# Function to check if jq is installed
+check_jq_installation() {
+    if ! command -v jq &> /dev/null; then
+        echo "Error: jq is not installed. Please install jq first." >&2
+        echo "On Ubuntu/Debian: sudo apt-get install jq" >&2
+        echo "On macOS: brew install jq" >&2
+        return 1
+    else
+        local jq_version=$(jq --version 2>&1)
+        echo "jq is installed: $jq_version" >&2
+        return 0
+    fi
+}
+
 # Function to get destination directory from user
 get_destination_directory() {
     read -r destination_path
@@ -56,6 +70,27 @@ get_destination_directory() {
     echo "$destination_path"
 }
 
+# Function to check if Python is installed
+check_python_installation() {
+    # Check for python3 first (preferred on most systems)
+    if command -v python3 &> /dev/null; then
+        local python_version=$(python3 --version 2>&1)
+        echo "Python is installed: $python_version" >&2
+        return 0
+    # Fallback to python command
+    elif command -v python &> /dev/null; then
+        local python_version=$(python --version 2>&1)
+        echo "Python is installed: $python_version" >&2
+        return 0
+    else
+        echo "Error: Python is not installed on this system." >&2
+        echo "Please install Python to use the pytest boilerplate." >&2
+        echo "On Ubuntu/Debian: sudo apt-get install python3" >&2
+        echo "On macOS: brew install python3" >&2
+        return 1
+    fi
+}
+
 # Function to display menu and get user selection (non-interactive)
 select_framework() {
     echo "Please select a framework:" >&2
@@ -96,6 +131,14 @@ select_framework_interactive() {
 
 # Main script
 main() {
+     # Check if jq is installed first
+    if ! check_jq_installation; then
+        return 1
+    fi
+    
+     echo ""
+     echo "Where should the boilerplate code be created?"
+     echo "Enter the full path to the destination directory (or press Enter to use current directory):"
     local selected
     local destination_path
     
@@ -133,6 +176,11 @@ main() {
     # Execute boilerplate code in the destination path based on selected framework
     case $selected in
         python)
+           # Check if Python is installed
+           if ! check_python_installation; then
+               return 1
+           fi
+           echo ""
            # Call the function to create the boilerplate for pytest
            if type pytest_boilerplate &>/dev/null; then
                pytest_boilerplate "$destination_path"
@@ -170,7 +218,7 @@ main() {
 }
 
 # Run main function
- echo ""
- echo "Where should the boilerplate code be created?"
- echo "Enter the full path to the destination directory (or press Enter to use current directory):"
+#  echo ""
+#  echo "Where should the boilerplate code be created?"
+#  echo "Enter the full path to the destination directory (or press Enter to use current directory):"
 main "$@"
