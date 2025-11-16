@@ -12,11 +12,6 @@
             "pages",
             "test",
             "utility"
-          ],
-          "files":[
-            "conftest.py",
-            "pytest.ini",
-            "requirements.txt"
           ]
         }
       },
@@ -34,6 +29,8 @@
         "Dockerfile",
         "docker-compose.yml",
         "execute.sh",
+        "pytest.ini",
+        "requirements.txt",
         "readme.md"
       ]
     }
