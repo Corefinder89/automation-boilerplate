@@ -232,8 +232,8 @@ pytest_boilerplate() {
             for file in "$content_service_dir"/* "$content_service_dir"/.*; do
                 # Skip . and .. entries
                 [ -e "$file" ] || continue
-                filename=$(basename "$file")
-                [ "$filename" = "." ] || [ "$filename" = ".." ] && continue
+                filename="$(basename "$file")"
+                ([ "$filename" = "." ] || [ "$filename" = ".." ]) && continue
                 
                 if [ -f "$file" ]; then
                     cp -v "$file" .
