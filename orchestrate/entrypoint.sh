@@ -18,8 +18,6 @@ check_jq_installation() {
     fi
 }
 
-# Function to safely expand path (replaces ~ with $HOME and expands environment variables)
-
 # Function to get destination directory from user
 get_destination_directory() {
     read -r destination_path
