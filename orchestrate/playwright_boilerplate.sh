@@ -337,7 +337,14 @@ EOF
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf test-results playwright-report",
-    "setup": "npm run install:browsers && npm run install:deps"
+    "setup": "npm run install:browsers && npm run install:deps",
+    "docker:build": "docker build -t playwright-automation .",
+    "docker:test": "docker-compose up --build playwright-tests",
+    "docker:dev": "docker-compose --profile dev up --build playwright-dev",
+    "docker:report": "docker-compose --profile report up --build playwright-reporter",
+    "docker:clean": "docker-compose down -v && docker system prune -f",
+    "docker:logs": "docker-compose logs -f playwright-tests",
+    "docker:shell": "docker-compose run --rm playwright-tests bash"
   },
   "keywords": [
     "playwright", 
@@ -526,6 +533,180 @@ EOF
         echo "  Created: .gitignore"
     fi
     
+    # Create .dockerignore
+    if [ ! -f ".dockerignore" ]; then
+        cat > .dockerignore << 'EOF'
+# Dependencies
+node_modules/
+
+# Test results and reports
+test-results/
+playwright-report/
+coverage/
+
+# Environment files
+.env*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Other config files
+.eslintrc.js
+.prettierrc
+.prettierignore
+tsconfig.json
+
+# Logs
+*.log
+logs/
+EOF
+        echo "  Created: .dockerignore"
+    fi
+    
+    # Create Dockerfile
+    if [ ! -f "Dockerfile" ]; then
+        cat > Dockerfile << 'EOF'
+# Use official Node.js runtime as base image
+FROM node:18-slim
+
+# Set working directory in container
+WORKDIR /app
+
+# Install system dependencies required for Playwright
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy package files
+COPY package*.json ./
+
+# Install Node.js dependencies
+RUN npm ci --only=production
+
+# Install Playwright browsers and dependencies
+RUN npx playwright install --with-deps
+
+# Copy application source code
+COPY . .
+
+# Create non-root user for security
+RUN groupadd -r playwright && useradd -r -g playwright -G audio,video playwright \
+    && mkdir -p /home/playwright/Downloads \
+    && chown -R playwright:playwright /app \
+    && chown -R playwright:playwright /home/playwright
+
+# Switch to non-root user
+USER playwright
+
+# Expose port for debugging (optional)
+EXPOSE 9323
+
+# Default command to run tests
+CMD ["npm", "test"]
+EOF
+        echo "  Created: Dockerfile"
+    fi
+    
+    # Create docker-compose.yml
+    if [ ! -f "docker-compose.yml" ]; then
+        cat > docker-compose.yml << 'EOF'
+version: '3.8'
+
+services:
+  playwright-tests:
+    build: .
+    container_name: playwright-automation
+    volumes:
+      # Mount source code for development
+      - .:/app
+      # Preserve node_modules in container
+      - /app/node_modules
+      # Mount test results to host
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
+    environment:
+      - NODE_ENV=test
+      - CI=true
+    networks:
+      - playwright-network
+    depends_on:
+      - selenium-grid
+    command: npm test
+
+  # Optional: Selenium Grid for distributed testing
+  selenium-grid:
+    image: selenium/standalone-chromium:latest
+    container_name: selenium-grid
+    ports:
+      - "4444:4444"
+      - "7900:7900"  # VNC port for viewing tests
+    environment:
+      - SE_VNC_NO_PASSWORD=1
+    networks:
+      - playwright-network
+    shm_size: 2gb
+
+  # Development service with live reload
+  playwright-dev:
+    build: .
+    container_name: playwright-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "9323:9323"  # Playwright UI mode
+    environment:
+      - NODE_ENV=development
+    networks:
+      - playwright-network
+    command: npm run test:ui
+    profiles:
+      - dev
+
+  # Service for generating test reports
+  playwright-reporter:
+    build: .
+    container_name: playwright-reporter
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "9323:9323"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - playwright-network
+    command: npm run report:html
+    profiles:
+      - report
+
+networks:
+  playwright-network:
+    driver: bridge
+
+volumes:
+  node_modules:
+EOF
+        echo "  Created: docker-compose.yml"
+    fi
+    
     # Get the full path of the created boilerplate
     local boilerplate_full_path="$(pwd)"
     
@@ -538,8 +719,22 @@ EOF
     echo "Root directory: $root_dir"
     echo ""
     echo "Next steps:"
+    echo ""
+    echo "Local Development:"
     echo "1. cd $boilerplate_full_path"
     echo "2. npm install"
     echo "3. npx playwright install"
     echo "4. npm test"
+    echo ""
+    echo "Docker Development:"
+    echo "1. cd $boilerplate_full_path"
+    echo "2. npm run docker:test    # Run tests in Docker"
+    echo "3. npm run docker:dev     # Development mode with UI"
+    echo "4. npm run docker:report  # Generate and view reports"
+    echo ""
+    echo "Available Docker commands:"
+    echo "- npm run docker:build    # Build Docker image"
+    echo "- npm run docker:clean    # Clean up containers and images"
+    echo "- npm run docker:logs     # View test logs"
+    echo "- npm run docker:shell    # Access container shell"
 }
