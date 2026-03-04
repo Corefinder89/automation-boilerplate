@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Source the pytest boilerplate script
+# Source the boilerplate scripts
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/pytest_boilerplate.sh"
+source "$SCRIPT_DIR/playwright_boilerplate.sh"
 
 # Function to check if jq is installed
 check_jq_installation() {
@@ -87,6 +88,34 @@ check_python_installation() {
         echo "Please install Python to use the pytest boilerplate." >&2
         echo "On Ubuntu/Debian: sudo apt-get install python3" >&2
         echo "On macOS: brew install python3" >&2
+        return 1
+    fi
+}
+
+# Function to check if Node.js and npm are installed
+check_nodejs_installation() {
+    # Check for Node.js
+    if command -v node &> /dev/null; then
+        local node_version=$(node --version 2>&1)
+        echo "Node.js is installed: $node_version" >&2
+    else
+        echo "Error: Node.js is not installed on this system." >&2
+        echo "Please install Node.js to use the Playwright boilerplate." >&2
+        echo "On Ubuntu/Debian: sudo apt-get install nodejs npm" >&2
+        echo "On macOS: brew install node" >&2
+        return 1
+    fi
+    
+    # Check for npm
+    if command -v npm &> /dev/null; then
+        local npm_version=$(npm --version 2>&1)
+        echo "npm is installed: $npm_version" >&2
+        return 0
+    else
+        echo "Error: npm is not installed on this system." >&2
+        echo "Please install npm to use the Playwright boilerplate." >&2
+        echo "On Ubuntu/Debian: sudo apt-get install npm" >&2
+        echo "On macOS: npm is included with Node.js" >&2
         return 1
     fi
 }
@@ -196,9 +225,14 @@ main() {
            fi
             ;;
         playwright)
+           # Check if Node.js and npm are installed
+           if ! check_nodejs_installation; then
+               return 1
+           fi
+           echo ""
            # Call the function to create the boilerplate for playwright
-           if type create_playwright_boilerplate &>/dev/null; then
-               create_playwright_boilerplate "$destination_path"
+           if type playwright_boilerplate &>/dev/null; then
+               playwright_boilerplate "$destination_path"
                local exit_code=$?
                if [ $exit_code -ne 0 ]; then
                    echo ""
@@ -206,7 +240,7 @@ main() {
                    return $exit_code
                fi
            else
-               echo "Error: create_playwright_boilerplate function not found"
+               echo "Error: playwright_boilerplate function not found"
                return 1
            fi
             ;;
