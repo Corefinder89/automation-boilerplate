@@ -158,6 +158,21 @@ npm run docker:clean
 
 ## 🔧 Development Workflow
 
+### Continuous Integration
+The project includes automated quality checks via GitHub Actions:
+
+#### Bash Script Linting
+- **Trigger**: Pull requests to `master` branch
+- **Tool**: Shellcheck for bash script validation
+- **Scope**: All `.sh` and `.bash` files in the repository
+- **Exclusions**: `node_modules`, `.git`, test artifacts
+
+The workflow automatically:
+- ✅ Finds all bash scripts in the repository
+- ✅ Runs Shellcheck with error-level severity
+- ✅ Provides detailed annotations for any issues
+- ✅ Blocks PR merge if linting fails
+
 ### Local Development (Playwright)
 ```bash
 cd your-project-directory
@@ -261,6 +276,24 @@ Multi-stage builds with:
 2. Test changes with both frameworks  
 3. Update documentation for new features
 4. Ensure Docker compatibility for Playwright changes
+5. **All bash scripts must pass Shellcheck validation**
+
+### Code Quality Requirements
+- **Bash Scripts**: Must pass Shellcheck linting (enforced on PRs)
+- **Documentation**: Update README for new features
+- **Testing**: Validate both Python and Playwright boilerplates
+
+### Pre-submission Checklist
+```bash
+# Validate bash scripts locally
+shellcheck *.sh orchestrate/*.sh
+
+# Test Python boilerplate
+./entrypoint.sh  # Select option 1
+
+# Test Playwright boilerplate  
+./entrypoint.sh  # Select option 2
+```
 
 ### Development Setup
 ```bash
@@ -308,6 +341,24 @@ brew ensure jq
 **Permission denied:**
 ```bash
 chmod +x entrypoint.sh
+```
+
+**Shellcheck linting failures:**
+```bash
+# Install shellcheck locally
+# Ubuntu/Debian
+sudo apt-get install shellcheck
+
+# macOS
+brew install shellcheck
+
+# Run local validation
+shellcheck *.sh orchestrate/*.sh
+
+# Fix common issues:
+# - Use double quotes around variables: "$var" instead of $var
+# - Check for undefined variables
+# - Validate command substitutions
 ```
 
 **Docker issues (Playwright):**
