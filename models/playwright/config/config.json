@@ -1,0 +1,22 @@
+{
+    "root": {
+        "automation-testing": {
+            "directories": {
+                "credentials": [
+                    "credentials.yml"
+                ],
+                "scripts": {},
+                "src": {
+                    "data": {},
+                    "pages": {},
+                    "staticfiles": {},
+                    "tests": {
+                        "features": {},
+                        "steps": {}
+                    },
+                    "utils": {}
+                }
+            }
+        }
+    }
+}

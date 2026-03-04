@@ -2,8 +2,8 @@
 
 # Source the boilerplate scripts
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/pytest_boilerplate.sh"
-source "$SCRIPT_DIR/playwright_boilerplate.sh"
+source "$SCRIPT_DIR/orchestrate/pytest_boilerplate.sh"
+source "$SCRIPT_DIR/orchestrate/playwright_boilerplate.sh"
 
 # Function to check if jq is installed
 check_jq_installation() {
