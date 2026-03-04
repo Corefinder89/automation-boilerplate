@@ -201,8 +201,11 @@ playwright_boilerplate() {
                 filename="$(basename "$file")"
                 ([ "$filename" = "." ] || [ "$filename" = ".." ]) && continue
                 
-                # Skip .pre-commit-config.yaml for Playwright projects
+                # Skip Python-specific files for Playwright projects
                 [ "$filename" = ".pre-commit-config.yaml" ] && continue
+                [ "$filename" = "requirements.txt" ] && continue
+                [ "$filename" = "conftest.py" ] && continue
+                [ "$filename" = ".style.yapf" ] && continue
                 
                 if [ -f "$file" ]; then
                     cp -v "$file" .
@@ -309,24 +312,218 @@ EOF
 {
   "name": "playwright-automation-testing",
   "version": "1.0.0",
-  "description": "Playwright automation testing boilerplate",
+  "description": "Playwright automation testing boilerplate with comprehensive tooling",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
-    "report": "playwright show-report"
+    "test:chromium": "playwright test --project=chromium",
+    "test:firefox": "playwright test --project=firefox",
+    "test:webkit": "playwright test --project=webkit",
+    "test:parallel": "playwright test --workers=4",
+    "test:serial": "playwright test --workers=1",
+    "report": "playwright show-report",
+    "report:html": "playwright show-report --port=9323",
+    "install:browsers": "npx playwright install",
+    "install:deps": "npx playwright install-deps",
+    "codegen": "npx playwright codegen",
+    "trace": "npx playwright show-trace",
+    "lint": "eslint . --ext .js,.ts,.jsx,.tsx",
+    "lint:fix": "eslint . --ext .js,.ts,.jsx,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf test-results playwright-report",
+    "setup": "npm run install:browsers && npm run install:deps"
   },
-  "keywords": ["playwright", "testing", "automation", "e2e"],
+  "keywords": [
+    "playwright", 
+    "testing", 
+    "automation", 
+    "e2e", 
+    "browser-testing",
+    "typescript",
+    "javascript"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@playwright/test": "^1.40.0"
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.8.0",
+    "typescript": "^5.2.0",
+    "eslint": "^8.50.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "@typescript-eslint/parser": "^6.7.0",
+    "prettier": "^3.0.0",
+    "rimraf": "^5.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.0",
+    "faker": "^6.6.6",
+    "lodash": "^4.17.21"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }
 EOF
         echo "  Created: package.json"
+    fi
+    
+    # Create TypeScript configuration
+    if [ ! -f "tsconfig.json" ]; then
+        cat > tsconfig.json << 'EOF'
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@pages/*": ["src/pages/*"],
+      "@utils/*": ["src/utils/*"],
+      "@data/*": ["src/data/*"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "tests/**/*",
+    "*.config.js",
+    "*.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "test-results",
+    "playwright-report"
+  ]
+}
+EOF
+        echo "  Created: tsconfig.json"
+    fi
+    
+    # Create ESLint configuration
+    if [ ! -f ".eslintrc.js" ]; then
+        cat > .eslintrc.js << 'EOF'
+module.exports = {
+  env: {
+    browser: true,
+    es2021: true,
+    node: true,
+  },
+  extends: [
+    'eslint:recommended',
+    '@typescript-eslint/recommended',
+  ],
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+  },
+  plugins: [
+    '@typescript-eslint',
+  ],
+  rules: {
+    'indent': ['error', 2],
+    'linebreak-style': ['error', 'unix'],
+    'quotes': ['error', 'single'],
+    'semi': ['error', 'always'],
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-unused-vars': 'error',
+  },
+  ignorePatterns: [
+    'node_modules/',
+    'test-results/',
+    'playwright-report/',
+    '*.config.js',
+  ],
+};
+EOF
+        echo "  Created: .eslintrc.js"
+    fi
+    
+    # Create Prettier configuration
+    if [ ! -f ".prettierrc" ]; then
+        cat > .prettierrc << 'EOF'
+{
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "arrowParens": "avoid",
+  "endOfLine": "lf"
+}
+EOF
+        echo "  Created: .prettierrc"
+    fi
+    
+    # Create .prettierignore
+    if [ ! -f ".prettierignore" ]; then
+        cat > .prettierignore << 'EOF'
+node_modules/
+test-results/
+playwright-report/
+coverage/
+*.min.js
+*.bundle.js
+EOF
+        echo "  Created: .prettierignore"
+    fi
+    
+    # Create .gitignore
+    if [ ! -f ".gitignore" ]; then
+        cat > .gitignore << 'EOF'
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test results
+test-results/
+playwright-report/
+coverage/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+logs/
+EOF
+        echo "  Created: .gitignore"
     fi
     
     # Get the full path of the created boilerplate
