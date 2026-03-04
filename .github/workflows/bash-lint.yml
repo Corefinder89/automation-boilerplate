@@ -1,0 +1,59 @@
+name: Bash Script Linter
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '**/*.sh'
+      - '**/*.bash'
+
+jobs:
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Find bash scripts
+      id: find-scripts
+      run: |
+        # Find all bash script files
+        scripts=$(find . -name "*.sh" -o -name "*.bash" | grep -v node_modules | grep -v .git)
+        echo "Found bash scripts:"
+        echo "$scripts"
+        echo "scripts<<EOF" >> $GITHUB_OUTPUT
+        echo "$scripts" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Run Shellcheck
+      uses: ludeeus/action-shellcheck@master
+      with:
+        scandir: './'
+        format: gcc
+        severity: error
+        exclude-paths: |
+          node_modules
+          .git
+          test-results
+          playwright-report
+        additional_files: |
+          entrypoint.sh
+          orchestrate/pytest_boilerplate.sh
+          orchestrate/playwright_boilerplate.sh
+
+    - name: Shellcheck with annotations
+      if: failure()
+      run: |
+        echo "::error::Shellcheck found issues in bash scripts. Please fix the issues above."
+        exit 1
+
+    - name: Success message
+      if: success()
+      run: |
+        echo "✅ All bash scripts passed Shellcheck validation!"
+        echo "The following scripts were validated:"
+        find . -name "*.sh" -o -name "*.bash" | grep -v node_modules | grep -v .git
